@@ -1,215 +1,203 @@
 <!DOCTYPE HTML>
-<!--
-	Traveler by freehtml5.co
-	Twitter: http://twitter.com/fh5co
-	URL: http://freehtml5.co
--->
 <html>
-	<head>
+<head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Traveler &mdash; Free Website Template, Free HTML5 Template by FreeHTML5.co</title>
+	<title>Traveler — Free Website Template</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="Free HTML5 Website Template by FreeHTML5.co" />
-	<meta name="keywords" content="free website templates, free html5, free template, free bootstrap, free website template, html5, css3, mobile first, responsive" />
-	<meta name="author" content="FreeHTML5.co" />
-
- 
-
-	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel="stylesheet">
 	
-	<!-- Animate.css -->
+	<link href="https://fonts.googleapis.com/css?family=Lato:300,400,700" rel="stylesheet">
 	<link rel="stylesheet" href="css/animate.css">
-	<!-- Icomoon Icon Fonts-->
 	<link rel="stylesheet" href="css/icomoon.css">
-	<!-- Themify Icons-->
 	<link rel="stylesheet" href="css/themify-icons.css">
-	<!-- Bootstrap  -->
 	<link rel="stylesheet" href="css/bootstrap.css">
-
-	<!-- Magnific Popup -->
 	<link rel="stylesheet" href="css/magnific-popup.css">
-
-	<!-- Magnific Popup -->
 	<link rel="stylesheet" href="css/bootstrap-datepicker.min.css">
-
-	<!-- Owl Carousel  -->
 	<link rel="stylesheet" href="css/owl.carousel.min.css">
 	<link rel="stylesheet" href="css/owl.theme.default.min.css">
-
-	<!-- Theme style  -->
 	<link rel="stylesheet" href="css/style.css">
 
-	<!-- Modernizr JS -->
 	<script src="js/modernizr-2.6.2.min.js"></script>
-	<!-- FOR IE9 below -->
-	<!--[if lt IE 9]>
-	<script src="js/respond.min.js"></script>
-	<![endif]-->
 
-	</head>
-	<body>
+	<style>
+		.video-container {
+			position: relative;
+			padding-bottom: 56.25%; /* 16:9 aspect ratio */
+			padding-top: 30px;
+			height: 0;
+			overflow: hidden;
+		}
+		.video-container iframe {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+		@media (max-width: 768px) {
+			.video-container {
+				margin-bottom: 20px;
+			}
+		}
+	</style>
+</head>
+<body>
 
-  <!-- Load YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+<!-- Load YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
-  <script>
-    // Get phone number from URL (like ?phone=998901234567)
-    const phone = new URLSearchParams(window.location.search).get("phone");
-    let player, interval;
+<script>
+let startTime = Date.now();
+let watchedSeconds = 0;
+let watchInterval;
+let player;
+let submitted = false;
 
-    // Load YouTube video
-    function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '390',
-        width: '640',
-        videoId: 'mjEiaPyhMQQ', // Your YouTube Video ID
-        events: { 'onStateChange': onPlayerStateChange }
-      });
-    }
+// URL params
+const params = new URLSearchParams(window.location.search);
+const phone = params.get("phone") || params.get("number") || "";
+const name = params.get("name") || "";
 
-    // Track watch progress
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.PLAYING) {
-        interval = setInterval(() => {
-          const current = Math.floor(player.getCurrentTime());
-          console.log(phone + " watched until " + current + " seconds");
-          /*
-          fetch("/track_watch", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone: phone, watched_until: current })
-          });
-          */
-        }, 10000); // report every 10 seconds
-      } else {
-        clearInterval(interval);
+// FormBold endpoint
+const FORMBOLD_URL = "https://formbold.com/s/9Bq2L";
+
+// YouTube API
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player("player", {
+    videoId: "mjEiaPyhMQQ",
+    events: {
+      onStateChange: function(event) {
+        if (event.data === YT.PlayerState.PLAYING) {
+          watchInterval = setInterval(() => watchedSeconds++, 1000);
+        } else {
+          clearInterval(watchInterval);
+        }
       }
     }
-  </script>
-	
-	<div id="page">
+  });
+}
 
-	
-	<!-- <div class="page-inner"> -->
+// Send watch data quietly
+function sendWatchData() {
+  if (submitted) return; // prevent double submission
 
-	
+  const duration = Math.round((Date.now() - startTime)/1000);
+  const data = new FormData();
+  data.append("name", name);
+  data.append("phone", phone);
+  data.append("watched", watchedSeconds);
+  data.append("duration", duration);
+
+  if (navigator.sendBeacon) {
+    const blob = new Blob([new URLSearchParams(data).toString()], {type: "application/x-www-form-urlencoded"});
+    navigator.sendBeacon(FORMBOLD_URL, blob);
+  } else {
+    fetch(FORMBOLD_URL, { method: "POST", body: data }).catch(err => console.log("Watch data failed:", err));
+  }
+}
+
+// Send on page exit if user didn't submit
+window.addEventListener("beforeunload", sendWatchData);
+
+// Show form after 5s
+window.addEventListener("load", () => {
+  setTimeout(() => { document.getElementById("delayed-form").style.display = "block"; }, 5000);
+});
+
+// Handle form submit
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("myForm");
+  form.addEventListener("submit", async function(e) {
+    e.preventDefault();
+    submitted = true; // mark as submitted
+
+    const formData = new FormData(form);
+    formData.append("watched", watchedSeconds);
+    formData.append("duration", Math.round((Date.now() - startTime)/1000));
+    formData.append("phone_url", phone);
+    formData.append("name_url", name);
+
+    try {
+      await fetch(FORMBOLD_URL, { method: "POST", body: formData });
+      const userEmail = encodeURIComponent(formData.get("name"));
+      const userPhone = encodeURIComponent(formData.get("number"));
+      window.location.href = `https://www.mywebsite.com/thankyou?email=${userEmail}&phone=${userPhone}`;
+    } catch(err) {
+      console.error("Form submission failed:", err);
+      alert("Submission failed, please try again.");
+    }
+  });
+});
+
+</script>
+
+<div id="page">
 	<header id="gtco-header" class="gtco-cover gtco-cover-md" role="banner" style="background-image: url(images/img_bg_2.jpg)">
 		<div class="overlay"></div>
 		<div class="gtco-container">
 			<div class="row">
 				<div class="col-md-12 col-md-offset-0 text-left">
-			<div >
-						<div class="col-md-7 mt-text animate-box" data-animate-effect="fadeInUp">
+					<div>
+						<div class="col-md-7 col-sm-12 mt-text animate-box" data-animate-effect="fadeInUp">
 							<h2>Thank you for your interest!</h2>
 							<p>Video will start below. We’ll track how much you watch.</p>
-						  
-							<!-- YouTube player container -->
-							<div id="player"></div>
-						</div>
-						<div class="col-md-4 col-md-push-1 animate-box" data-animate-effect="fadeInRight">
-							<div class="form-wrap">
-								<div class="tab">
-									
-									<div class="tab-content">
-										<div class="tab-content-inner active" data-content="signup">
-											<h3>We will call you</h3>
-											<form action="https://formbold.com/s/9xlnE" method="post">
-												<div class="row form-group">
-													<div class="col-md-12">
-														<label for="fullname">Your Name</label>
-														<input type="text" id="fullname" class="form-control" name="name">
-													</div>
-												</div>
-	
-												<div class="row form-group">
-													<div class="col-md-12">
-														<label>Phone Number</label>
-														<input type="tel" class="form-control" name="number">
-													</div>
-												</div>
 
-												<div class="row form-group">
-													<div class="col-md-12">
-														<input type="submit" class="btn btn-primary btn-block" value="Submit">
-													</div>
-												</div>
-											</form>	
-										</div>
-
-										
-									</div>
-								</div>
+							<!-- Responsive YouTube player -->
+							<div class="video-container">
+								<div id="player"></div>
 							</div>
 						</div>
-					</div>
-							
-					
+
+						<div class="col-md-4 col-md-push-1 col-sm-12 animate-box" data-animate-effect="fadeInRight">
+							<!-- FORM (hidden initially) -->
+							<div id="delayed-form" style="display:none;">
+							  <div class="form-wrap">
+								<div class="tab-content">
+								  <div class="tab-content-inner active" data-content="signup">
+									<h3>We will call you</h3>
+									<form id="myForm">
+									  <div class="row form-group">
+										<div class="col-md-12">
+										  <label for="fullname">Your Name</label>
+										  <input type="text" id="fullname" class="form-control" name="name">
+										</div>
+									  </div>
+									  <div class="row form-group">
+										<div class="col-md-12">
+										  <label>Phone Number</label>
+										  <input type="tel" class="form-control" name="number">
+										</div>
+									  </div>
+									  <div class="row form-group">
+										<div class="col-md-12">
+										  <input type="submit" class="btn btn-primary btn-block" value="Submit">
+										</div>
+									  </div>
+									</form>
+								  </div>
+								</div>
+							  </div>
+							</div>
+						</div>
+					</div>			
 				</div>
 			</div>
 		</div>
 	</header>
-	
-	
-	
+</div>
 
+<!-- Scripts -->
+<script src="js/jquery.min.js"></script>
+<script src="js/jquery.easing.1.3.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/jquery.waypoints.min.js"></script>
+<script src="js/owl.carousel.min.js"></script>
+<script src="js/jquery.countTo.js"></script>
+<script src="js/jquery.stellar.min.js"></script>
+<script src="js/jquery.magnific-popup.min.js"></script>
+<script src="js/magnific-popup-options.js"></script>
+<script src="js/bootstrap-datepicker.min.js"></script>
+<script src="js/main.js"></script>
 
-
-
-			<div class="row copyright">
-				<div class="col-md-12">
-					<p class="pull-left">
-						<small class="block">&copy; 2016 Free HTML5. All Rights Reserved.</small> 
-						<small class="block">Designed by <a href="https://freehtml5.co/" target="_blank">FreeHTML5.co</a> Demo Images: <a href="http://unsplash.com/" target="_blank">Unsplash</a></small>
-					
-				</div>
-			</div>
-
-		</div>
-	</footer>
-	<!-- </div> -->
-
-	</div>
-
-	<div class="gototop js-top">
-		<a href="#" class="js-gotop"><i class="icon-arrow-up"></i></a>
-	</div>
-	
-	<!-- jQuery -->
-	<script src="js/jquery.min.js"></script>
-	<!-- jQuery Easing -->
-	<script src="js/jquery.easing.1.3.js"></script>
-	<!-- Bootstrap -->
-	<script src="js/bootstrap.min.js"></script>
-	<!-- Waypoints -->
-	<script src="js/jquery.waypoints.min.js"></script>
-	<!-- Carousel -->
-	<script src="js/owl.carousel.min.js"></script>
-	<!-- countTo -->
-	<script src="js/jquery.countTo.js"></script>
-
-	<!-- Stellar Parallax -->
-	<script src="js/jquery.stellar.min.js"></script>
-
-	<!-- Magnific Popup -->
-	<script src="js/jquery.magnific-popup.min.js"></script>
-	<script src="js/magnific-popup-options.js"></script>
-	
-	<!-- Datepicker -->
-	<script src="js/bootstrap-datepicker.min.js"></script>
-	
-
-	<!-- Main -->
-	<script src="js/main.js">
-		$('.tour-gallery').magnificPopup({
-  type: 'image',
-  gallery: {
-    enabled: true
-  }
-});
-
-	</script>
-
-	</body>
+</body>
 </html>
-
