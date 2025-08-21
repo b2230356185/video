@@ -39,6 +39,8 @@
 				margin-bottom: 20px;
 			}
 		}
+
+
 	</style>
 </head>
 <body>
@@ -99,10 +101,14 @@ function sendWatchData() {
 // Send on page exit if user didn't submit
 window.addEventListener("beforeunload", sendWatchData);
 
-// Show form after 5s
 window.addEventListener("load", () => {
-  setTimeout(() => { document.getElementById("delayed-form").style.display = "block"; }, 5000);
+  setTimeout(() => { 
+    document.getElementById("form-content").style.display = "block"; 
+  }, 5000);
 });
+
+
+
 
 // Handle form submit
 document.addEventListener("DOMContentLoaded", () => {
@@ -121,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
       await fetch(FORMBOLD_URL, { method: "POST", body: formData });
       const userEmail = encodeURIComponent(formData.get("name"));
       const userPhone = encodeURIComponent(formData.get("number"));
-      window.location.href = `https://www.mywebsite.com/thankyou?email=${userEmail}&phone=${userPhone}`;
+      window.location.href = `https://www.instagram.com/samtraveluz/`;
     } catch(err) {
       console.error("Form submission failed:", err);
       alert("Submission failed, please try again.");
@@ -149,36 +155,40 @@ document.addEventListener("DOMContentLoaded", () => {
 						</div>
 
 						<div class="col-md-4 col-md-push-1 col-sm-12 animate-box" data-animate-effect="fadeInRight">
-							<!-- FORM (hidden initially) -->
-							<div id="delayed-form" style="display:none;">
-							  <div class="form-wrap">
-								<div class="tab-content">
-								  <div class="tab-content-inner active" data-content="signup">
-									<h3>We will call you</h3>
-									<form id="myForm">
-									  <div class="row form-group">
-										<div class="col-md-12">
-										  <label for="fullname">Your Name</label>
-										  <input type="text" id="fullname" class="form-control" name="name">
+							<!-- FORM wrapper (always visible) -->
+							<div id="delayed-form-inner" style="min-height: 300px;">
+							  <!-- Hidden form initially -->
+							  <div id="form-content" style="display: none;">
+								<div class="form-wrap">
+								  <div class="tab-content">
+									<div class="tab-content-inner active" data-content="signup">
+									  <h3>We will call you</h3>
+									  <form id="myForm">
+										<div class="row form-group">
+										  <div class="col-md-12">
+											<label for="fullname">Your Name</label>
+											<input type="text" id="fullname" class="form-control" name="name">
+										  </div>
 										</div>
-									  </div>
-									  <div class="row form-group">
-										<div class="col-md-12">
-										  <label>Phone Number</label>
-										  <input type="tel" class="form-control" name="number">
+										<div class="row form-group">
+										  <div class="col-md-12">
+											<label>Phone Number</label>
+											<input type="tel" class="form-control" name="number">
+										  </div>
 										</div>
-									  </div>
-									  <div class="row form-group">
-										<div class="col-md-12">
-										  <input type="submit" class="btn btn-primary btn-block" value="Submit">
+										<div class="row form-group">
+										  <div class="col-md-12">
+											<input type="submit" class="btn btn-primary btn-block" value="Submit">
+										  </div>
 										</div>
-									  </div>
-									</form>
+									  </form>
+									</div>
 								  </div>
 								</div>
 							  </div>
 							</div>
-						</div>
+						  </div>
+					</div>
 					</div>			
 				</div>
 			</div>
